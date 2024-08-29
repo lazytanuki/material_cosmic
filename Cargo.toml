@@ -1,0 +1,20 @@
+[package]
+name = "cosmic-wallust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+log = "0.4.22"
+simplelog = "0.12.2"
+zbus = { version = "4.4.0", default-features = false, features = ["tokio"] }
+cosmic-bg-config = { git = "https://github.com/pop-os/cosmic-bg" }
+cosmic-config = { git = "https://github.com/pop-os/libcosmic" }
+cosmic-theme = { git = "https://github.com/pop-os/libcosmic" }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
+palette = { version = "0.7.6", features = ["serializing"] }
+serde = { version = "1.0.208", features = ["derive"] }
+wallust = "3.0.0"
+clap = { version = "4.5.16", features = ["derive"] }
+tempfile = "3.12.0"
+directories = "5.0.1"
