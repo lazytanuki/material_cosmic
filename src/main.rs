@@ -1,10 +1,13 @@
 use anyhow::bail;
 use clap::Parser;
-use cosmic_wallust::{generate_colors, options};
+use cosmic_settings_daemon::CosmicSettingsDaemonProxy;
+use cosmic_wallust::{apply_colors_to_desktop, generate_colors, options};
 use directories::ProjectDirs;
 use log::LevelFilter;
+use zbus::Connection;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     // Handle arguments
     let args = options::Options::parse();
     let cache_dir = match args.cache_dir {
@@ -31,7 +34,7 @@ fn main() -> anyhow::Result<()> {
             let wallust_config = wallust::config::Config {
                 backend_user: args.backend,
                 backend: args.backend.unwrap_or_default(),
-                true_th: 17,
+                true_th: 20,
                 ..Default::default()
             };
             let colors = generate_colors(
@@ -41,6 +44,8 @@ fn main() -> anyhow::Result<()> {
                 args.overwrite_cache,
             )?;
             colors.print();
+            let res = apply_colors_to_desktop(&colors, true).await;
+            println!("{res:#?}");
         }
         options::Cmd::Daemon {} => todo!(),
     }
