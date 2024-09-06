@@ -1,10 +1,8 @@
 use anyhow::bail;
 use clap::Parser;
-use cosmic_settings_daemon::CosmicSettingsDaemonProxy;
 use cosmic_wallust::{apply_colors_to_desktop, generate_colors, options};
 use directories::ProjectDirs;
 use log::LevelFilter;
-use zbus::Connection;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
