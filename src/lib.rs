@@ -1,10 +1,14 @@
-use std::path::Path;
+use std::{borrow::BorrowMut, path::Path};
 
 use anyhow::Context;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_settings_daemon::CosmicSettingsDaemonProxy;
-use cosmic_theme::{Theme, ThemeBuilder};
-use palette::{cam16::IntoCam16Unclamped, Darken};
+use material_colors::{
+    color::Argb,
+    image::{FilterType, ImageReader},
+    theme::{Theme, ThemeBuilder},
+};
+use palette::{cam16::IntoCam16Unclamped, Darken, IntoColor, RgbHue, Srgb, Srgba};
 use wallust::colors::Colors;
 use zbus::Connection;
 
@@ -14,41 +18,20 @@ pub mod options;
 /// Generate colors using wallust, with dynamic threshold.
 pub fn generate_colors(
     wallpaper_path: impl AsRef<Path>,
-    wallust_config: &wallust::config::Config,
     cache_path: &Path,
     overwrite_cache: bool,
-) -> anyhow::Result<Colors> {
-    log::info!(
-        "generating colors using wallust and backend {:?}",
-        wallust_config.backend_user
-    );
+) -> anyhow::Result<material_colors::theme::Theme> {
+    let image = std::fs::read(wallpaper_path).with_context(|| "unable to read file")?;
 
-    // Generate hash cache file name and cache dir to either read or write to it
-    let mut cached_data =
-        wallust::cache::Cache::new(wallpaper_path.as_ref(), wallust_config, cache_path)
-            .with_context(|| "unable to create cache")?;
+    let mut data = ImageReader::read(image).expect("failed to read image");
 
-    // Directly return cached colors, if any
-    if !overwrite_cache && cached_data.is_cached() {
-        match cached_data.read() {
-            Ok(data) => return Ok(data),
-            Err(e) => {
-                log::error!("unable to read cached data, continuing without it ({})", e);
-            }
-        }
-    }
+    // Lancsoz3 takes a little longer, but provides the best pixels for color extraction.
+    // However, if you don't like the results, you can always try other FilterType values.
+    data.resize(128, 128, FilterType::Lanczos3);
 
-    // Otherwise, generate colors
-    let colors = wallust::gen_colors(wallpaper_path.as_ref(), wallust_config, false)
-        .with_context(|| "unable to generate colors using wallust")?
-        .0;
+    let theme = ThemeBuilder::with_source(ImageReader::extract_color(&data)).build();
 
-    // Write newly generated colors to cache
-    if let Err(e) = cached_data.write(&colors) {
-        log::error!("unable to write newly generated colors to cache ({e})");
-    }
-
-    Ok(colors)
+    Ok(theme)
 }
 
 /// Apply generated colors to terminals by sending them sequences
@@ -56,21 +39,36 @@ pub fn apply_colors_to_terminals(colors: &Colors, cache_path: &Path) -> anyhow::
     colors.sequences(cache_path, None)
 }
 
+fn argb_to_srgba(argb: Argb) -> Srgba {
+    Srgba::new(
+        argb.red as f32 / 255.0,
+        argb.green as f32 / 255.0,
+        argb.blue as f32 / 255.0,
+        argb.alpha as f32 / 255.0,
+    )
+}
+
 /// Set colors to COSMIC desktop
 pub async fn apply_colors_to_desktop<'a>(
-    colors: &Colors,
+    material_theme: &Theme,
     // settings_proxy: &'a CosmicSettingsDaemonProxy<'a>,
     is_dark: bool,
 ) -> anyhow::Result<()> {
     // Connect to the settings daemon
     // Retrieve default theme and apply colors to it
     let (builder_config, default) = if is_dark {
-        (ThemeBuilder::dark_config()?, Theme::dark_default())
+        (
+            cosmic_theme::ThemeBuilder::dark_config()?,
+            cosmic_theme::Theme::dark_default(),
+        )
     } else {
-        (ThemeBuilder::light_config()?, Theme::light_default())
+        (
+            cosmic_theme::ThemeBuilder::light_config()?,
+            cosmic_theme::Theme::light_default(),
+        )
     };
 
-    let mut theme = match ThemeBuilder::get_entry(&builder_config) {
+    let mut theme = match cosmic_theme::ThemeBuilder::get_entry(&builder_config) {
         Ok(entry) => entry,
         Err((errs, entry)) => {
             for err in errs {
@@ -79,17 +77,18 @@ pub async fn apply_colors_to_desktop<'a>(
             entry
         }
     };
+    let scheme = &material_theme.schemes.dark;
 
     theme.write_entry(&builder_config)?;
-    theme = theme.accent(colors.color5.0);
-    theme = theme.bg_color(colors.color1.0.darken(0.3).into());
-    theme = theme.text_tint(colors.color6.0);
-    theme = theme.neutral_tint(colors.background.0);
+    theme = theme.accent(*argb_to_srgba(scheme.primary));
+    theme = theme.bg_color((*argb_to_srgba(scheme.background)).into());
+    theme = theme.text_tint(*argb_to_srgba(scheme.on_background));
+    theme = theme.neutral_tint(*argb_to_srgba(scheme.secondary_container));
     let theme = theme.build();
     let theme_config = if theme.is_dark {
-        Theme::dark_config()
+        cosmic_theme::Theme::dark_config()
     } else {
-        Theme::light_config()
+        cosmic_theme::Theme::light_config()
     }?;
 
     theme.write_entry(&theme_config)?;

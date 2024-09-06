@@ -31,19 +31,7 @@ async fn main() -> anyhow::Result<()> {
 
     match args.mode {
         options::Cmd::Generate { wallpaper } => {
-            let wallust_config = wallust::config::Config {
-                backend_user: args.backend,
-                backend: args.backend.unwrap_or_default(),
-                true_th: 20,
-                ..Default::default()
-            };
-            let colors = generate_colors(
-                wallpaper.as_path(),
-                &wallust_config,
-                &cache_dir,
-                args.overwrite_cache,
-            )?;
-            colors.print();
+            let colors = generate_colors(wallpaper.as_path(), &cache_dir, args.overwrite_cache)?;
             let res = apply_colors_to_desktop(&colors, true).await;
             println!("{res:#?}");
         }
