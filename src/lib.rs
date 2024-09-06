@@ -8,12 +8,11 @@ use material_colors::{
     theme::{Theme, ThemeBuilder},
 };
 use palette::Srgba;
-use wallust::colors::Colors;
 
 pub mod config;
 pub mod options;
 
-/// Generate colors using wallust, with dynamic threshold.
+/// Generate colors using material-colors
 pub fn generate_colors(
     wallpaper_path: impl AsRef<Path>,
     cache_path: &Path,
@@ -32,11 +31,6 @@ pub fn generate_colors(
     Ok(theme)
 }
 
-/// Apply generated colors to terminals by sending them sequences
-pub fn apply_colors_to_terminals(colors: &Colors, cache_path: &Path) -> anyhow::Result<()> {
-    colors.sequences(cache_path, None)
-}
-
 fn argb_to_srgba(argb: Argb) -> Srgba {
     Srgba::new(
         argb.red as f32 / 255.0,
@@ -49,10 +43,8 @@ fn argb_to_srgba(argb: Argb) -> Srgba {
 /// Set colors to COSMIC desktop
 pub async fn apply_colors_to_desktop<'a>(
     material_theme: &Theme,
-    // settings_proxy: &'a CosmicSettingsDaemonProxy<'a>,
     is_dark: bool,
 ) -> anyhow::Result<()> {
-    // Connect to the settings daemon
     // Retrieve default theme and apply colors to it
     let (builder_config, _default) = if is_dark {
         (

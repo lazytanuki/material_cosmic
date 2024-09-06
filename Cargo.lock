@@ -717,28 +717,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cosmic-wallust"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "cosmic-bg-config",
- "cosmic-config",
- "cosmic-settings-daemon",
- "cosmic-theme",
- "directories",
- "log",
- "material-colors",
- "palette",
- "serde",
- "simplelog",
- "tempfile",
- "tokio",
- "wallust",
- "zbus",
-]
-
-[[package]]
 name = "cpufeatures"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1763,6 +1741,28 @@ dependencies = [
  "image",
  "indexmap",
  "serde",
+]
+
+[[package]]
+name = "material-cosmic"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "cosmic-bg-config",
+ "cosmic-config",
+ "cosmic-settings-daemon",
+ "cosmic-theme",
+ "directories",
+ "log",
+ "material-colors",
+ "palette",
+ "serde",
+ "simplelog",
+ "tempfile",
+ "tokio",
+ "wallust",
+ "zbus",
 ]
 
 [[package]]
