@@ -7,7 +7,7 @@ use material_colors::{
     image::{FilterType, ImageReader},
     theme::{Theme, ThemeBuilder},
 };
-use palette::Srgba;
+use palette::{cast::ArraysInto, Darken, Hsl, Hsla, Lighten, Srgba};
 
 pub mod config;
 pub mod options;
@@ -73,6 +73,7 @@ pub async fn apply_colors_to_desktop<'a>(
     theme = theme.bg_color((*argb_to_srgba(scheme.background)).into());
     theme = theme.text_tint(*argb_to_srgba(scheme.on_background));
     theme = theme.neutral_tint(*argb_to_srgba(scheme.secondary_container));
+    theme = theme.primary_container_bg((*argb_to_srgba(scheme.background).lighten(0.03)).into());
     theme.write_entry(&builder_config)?;
     let theme = theme.build();
     let theme_config = if theme.is_dark {
