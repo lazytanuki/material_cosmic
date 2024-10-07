@@ -69,11 +69,11 @@ pub async fn apply_colors_to_desktop<'a>(
     };
     let scheme = &material_theme.schemes.dark;
 
-    theme.write_entry(&builder_config)?;
     theme = theme.accent(*argb_to_srgba(scheme.primary));
     theme = theme.bg_color((*argb_to_srgba(scheme.background)).into());
     theme = theme.text_tint(*argb_to_srgba(scheme.on_background));
     theme = theme.neutral_tint(*argb_to_srgba(scheme.secondary_container));
+    theme.write_entry(&builder_config)?;
     let theme = theme.build();
     let theme_config = if theme.is_dark {
         cosmic_theme::Theme::dark_config()
